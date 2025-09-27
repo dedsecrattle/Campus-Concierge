@@ -1,0 +1,61 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Chat {
+  id                String   @id @default(cuid())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @default(now()) @updatedAt
+  status            String   @default("active")
+  escalatedToHuman  Boolean  @default(false)
+  followUpRequested Boolean  @default(false)
+  studentName       String?
+  studentEmail      String?
+  sessionEmail      String?
+  isActive          Boolean  @default(true)
+  userOnline        Boolean  @default(false)
+  lastActivity      DateTime @default(now())
+  connectionCount   Int      @default(0)
+
+  // Relations
+  messages           Message[]
+  adminInterventions AdminIntervention[]
+
+  @@index([sessionEmail])
+  @@index([userOnline])
+  @@map("chats")
+}
+
+model Message {
+  id          String   @id @default(cuid())
+  chatId      String   @map("chat_id")
+  content     String
+  sender      String // user, bot, admin
+  timestamp   DateTime @default(now())
+  messageType String   @default("text") @map("message_type") // text, system, escalation, follow_up
+
+  // Relations
+  chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
+}
+
+model AdminIntervention {
+  id           String   @id @default(cuid())
+  chatId       String   @map("chat_id")
+  adminMessage String   @map("admin_message")
+  timestamp    DateTime @default(now())
+
+  // Relations
+  chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@map("admin_interventions")
+}
