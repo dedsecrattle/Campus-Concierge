@@ -5,7 +5,11 @@ import { Send, User, Bot, AlertCircle, Calendar, Settings } from "lucide-react";
 import { Message, Chat } from "@/types";
 import Link from "next/link";
 import { io, Socket } from "socket.io-client";
-import type { ServerToClientEvents, ClientToServerEvents } from "@/types/socket";
+import type {
+  ServerToClientEvents,
+  ClientToServerEvents,
+} from "@/types/socket";
+import MarkdownMessage from "@/components/MarkdownMessage";
 
 interface ChatMessage extends Omit<Message, "id" | "chatId" | "timestamp"> {
   id?: string;
@@ -32,9 +36,10 @@ interface ChatWithCount extends Chat {
 
 interface EmailModalProps {
   isOpen: boolean;
-  onSubmit: (email: string, chatId?: string) => void;
+  onSubmit: (email: string, chatId?: string, forceNew?: boolean) => void;
   isReturningUser?: boolean;
   existingChats?: ChatWithCount[];
+  currentEmail?: string;
 }
 
 const EscalationModal = ({
@@ -147,9 +152,18 @@ const FollowUpModal = ({ isOpen, onClose, onSubmit }: FollowUpModalProps) => {
   );
 };
 
-const EmailModal = ({ isOpen, onSubmit, isReturningUser, existingChats }: EmailModalProps) => {
+const EmailModal = ({
+  isOpen,
+  onSubmit,
+  isReturningUser,
+  existingChats,
+  currentEmail,
+}: EmailModalProps) => {
   const [email, setEmail] = useState("");
   const [selectedChatId, setSelectedChatId] = useState<string>("");
+  
+  // Use currentEmail if provided, otherwise use local state
+  const effectiveEmail = currentEmail || email;
 
   if (!isOpen) return null;
 
@@ -164,7 +178,7 @@ const EmailModal = ({ isOpen, onSubmit, isReturningUser, existingChats }: EmailM
   const handleContinueChat = () => {
     if (selectedChatId) {
       // Continue with existing chat
-      onSubmit(email, selectedChatId);
+      onSubmit(effectiveEmail, selectedChatId);
     }
   };
 
@@ -177,13 +191,14 @@ const EmailModal = ({ isOpen, onSubmit, isReturningUser, existingChats }: EmailM
             {isReturningUser ? "Welcome Back!" : "Get Started"}
           </h3>
         </div>
-        
+
         {isReturningUser && existingChats && existingChats.length > 0 ? (
           <div>
             <p className="text-gray-600 mb-4">
-              We found existing conversations for {email}. Would you like to continue a previous chat or start a new one?
+              We found existing conversations for {effectiveEmail}. Would you like to
+              continue a previous chat or start a new one?
             </p>
-            
+
             <div className="mb-4 max-h-32 overflow-y-auto">
               {existingChats.map((chat: ChatWithCount) => (
                 <div
@@ -196,15 +211,16 @@ const EmailModal = ({ isOpen, onSubmit, isReturningUser, existingChats }: EmailM
                   onClick={() => setSelectedChatId(chat.id)}
                 >
                   <div className="text-sm font-medium">
-                    Chat from {new Date(chat.createdAt).toLocaleDateString()}
+                    Chat from {new Date(chat.createdAt).toLocaleDateString()} at {new Date(chat.createdAt).toLocaleTimeString()}
                   </div>
                   <div className="text-xs text-gray-500">
-                    Status: {chat.status} • Messages: {chat._count?.messages || 0}
+                    Status: {chat.status} • Messages:{" "}
+                    {chat._count?.messages || 0}
                   </div>
                 </div>
               ))}
             </div>
-            
+
             <div className="flex space-x-3">
               <button
                 onClick={handleContinueChat}
@@ -214,7 +230,7 @@ const EmailModal = ({ isOpen, onSubmit, isReturningUser, existingChats }: EmailM
                 Continue Selected Chat
               </button>
               <button
-                onClick={() => onSubmit(email)}
+                onClick={() => onSubmit(effectiveEmail, undefined, true)}
                 className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
               >
                 Start New Chat
@@ -224,7 +240,8 @@ const EmailModal = ({ isOpen, onSubmit, isReturningUser, existingChats }: EmailM
         ) : (
           <div>
             <p className="text-gray-600 mb-4">
-              Please provide your email address to start chatting. This helps us save your conversation and you can return to it later.
+              Please provide your email address to start chatting. This helps us
+              save your conversation and you can return to it later.
             </p>
             <form onSubmit={handleSubmit}>
               <div className="mb-4">
@@ -267,8 +284,13 @@ export default function Home() {
   const [showEmailModal, setShowEmailModal] = useState(true);
   const [existingChats, setExistingChats] = useState<ChatWithCount[]>([]);
   const [isReturningUser, setIsReturningUser] = useState(false);
-  const [socket, setSocket] = useState<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null);
+  const [currentModalEmail, setCurrentModalEmail] = useState<string>("");
+  const [socket, setSocket] = useState<Socket<
+    ServerToClientEvents,
+    ClientToServerEvents
+  > | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [forceNewConversation, setForceNewConversation] = useState(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -278,7 +300,6 @@ export default function Home() {
     scrollToBottom();
   }, [messages]);
 
-  // Add welcome message (only for new chats)
   useEffect(() => {
     if (!chatId && showEmailModal === false) {
       setMessages([
@@ -296,41 +317,45 @@ export default function Home() {
   // Initialize Socket.IO connection
   useEffect(() => {
     const newSocket = io({
-      path: '/api/socket',
-      transports: ['websocket', 'polling'],
+      path: "/api/socket",
+      transports: ["websocket", "polling"],
       timeout: 20000,
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionAttempts: 5,
     });
 
-    newSocket.on('connect', () => {
-      console.log('Connected to Socket.IO server');
+    newSocket.on("connect", () => {
+      console.log("Connected to Socket.IO server");
       setIsConnected(true);
     });
 
-    newSocket.on('disconnect', (reason) => {
-      console.log('Disconnected from Socket.IO server:', reason);
+    newSocket.on("disconnect", (reason) => {
+      console.log("Disconnected from Socket.IO server:", reason);
       setIsConnected(false);
     });
 
-    newSocket.on('connect_error', (error) => {
-      console.error('Socket.IO connection error:', error);
+    newSocket.on("connect_error", (error) => {
+      console.error("Socket.IO connection error:", error);
       setIsConnected(false);
     });
 
-    newSocket.on('reconnect', (attemptNumber) => {
-      console.log('Reconnected to Socket.IO server after', attemptNumber, 'attempts');
+    newSocket.on("reconnect", (attemptNumber) => {
+      console.log(
+        "Reconnected to Socket.IO server after",
+        attemptNumber,
+        "attempts"
+      );
       setIsConnected(true);
     });
 
-    newSocket.on('reconnect_error', (error) => {
-      console.error('Socket.IO reconnection error:', error);
+    newSocket.on("reconnect_error", (error) => {
+      console.error("Socket.IO reconnection error:", error);
     });
 
     // Listen for new messages
-    newSocket.on('new-message', (data) => {
-      console.log('Received new message:', data);
+    newSocket.on("new-message", (data) => {
+      console.log("Received new message:", data);
       if (data.chatId === chatId) {
         const newMessage: ChatMessage = {
           content: data.message.content,
@@ -339,22 +364,22 @@ export default function Home() {
           id: data.message.id,
           timestamp: data.message.timestamp,
         };
-        setMessages(prev => [...prev, newMessage]);
+        setMessages((prev) => [...prev, newMessage]);
       }
     });
 
     // Listen for admin interventions
-    newSocket.on('admin-intervention', (data) => {
-      console.log('Received admin intervention:', data);
+    newSocket.on("admin-intervention", (data) => {
+      console.log("Received admin intervention:", data);
       if (data.chatId === chatId) {
         const adminMessage: ChatMessage = {
           content: data.message.content,
-          sender: 'admin',
-          messageType: 'text',
+          sender: "admin",
+          messageType: "text",
           id: data.message.id,
           timestamp: data.message.timestamp,
         };
-        setMessages(prev => [...prev, adminMessage]);
+        setMessages((prev) => [...prev, adminMessage]);
       }
     });
 
@@ -363,7 +388,7 @@ export default function Home() {
     return () => {
       // Properly leave the chat room before disconnecting
       if (chatId) {
-        newSocket.emit('leave-chat', chatId);
+        newSocket.emit("leave-chat", chatId);
       }
       newSocket.close();
     };
@@ -372,15 +397,20 @@ export default function Home() {
   // Join chat room when chatId changes
   useEffect(() => {
     if (socket && chatId) {
-      socket.emit('join-chat', chatId);
+      socket.emit("join-chat", chatId);
       console.log(`Joined chat room: ${chatId}`);
     }
   }, [socket, chatId]);
 
   // Session management functions
-  const handleEmailSubmit = async (email: string, existingChatId?: string) => {
+  const handleEmailSubmit = async (
+    email: string,
+    existingChatId?: string,
+    forceNew?: boolean
+  ) => {
     setSessionEmail(email);
-    
+    setCurrentModalEmail(email); // Store email for modal use
+
     if (existingChatId) {
       // Continue existing chat
       setChatId(existingChatId);
@@ -388,28 +418,34 @@ export default function Home() {
       setShowEmailModal(false);
       return;
     }
-    
+
+    if (forceNew) {
+      setForceNewConversation(true);
+      setShowEmailModal(false);
+      return;
+    }
+
     try {
       // Check for existing sessions
-      const response = await fetch('/api/session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
+      const response = await fetch("/api/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
       });
-      
+
       const data = await response.json();
-      
+
       if (data.hasExistingChats && data.existingChats.length > 0) {
         setExistingChats(data.existingChats);
         setIsReturningUser(true);
         // Keep modal open to show chat options
         return;
       }
-      
+
       // No existing chats, proceed with new chat
       setShowEmailModal(false);
     } catch (error) {
-      console.error('Error checking session:', error);
+      console.error("Error checking session:", error);
       // Proceed anyway
       setShowEmailModal(false);
     }
@@ -419,7 +455,7 @@ export default function Home() {
     try {
       const response = await fetch(`/api/chat?chatId=${chatId}`);
       const data = await response.json();
-      
+
       if (response.ok && data.messages) {
         const chatMessages = data.messages.map((msg: Message) => ({
           content: msg.content,
@@ -431,7 +467,7 @@ export default function Home() {
         setMessages(chatMessages);
       }
     } catch (error) {
-      console.error('Error loading existing messages:', error);
+      console.error("Error loading existing messages:", error);
     }
   };
 
@@ -444,57 +480,131 @@ export default function Home() {
       messageType: "text",
     };
 
+    const currentInput = inputMessage;
     setMessages((prev) => [...prev, userMessage]);
     setInputMessage("");
     setIsLoading(true);
 
+    // Add empty bot message that will be filled with streaming content
+    const botMessageId = Date.now().toString();
+    const initialBotMessage: ChatMessage = {
+      id: botMessageId,
+      content: "",
+      sender: "bot",
+      messageType: "text",
+    };
+    setMessages((prev) => [...prev, initialBotMessage]);
+
     try {
-      const response = await fetch("/api/chat", {
+      const response = await fetch("/api/chat/stream", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           chatId,
-          message: inputMessage,
+          message: currentInput,
           isNewChat: !chatId,
           sessionEmail: sessionEmail,
+          forceNewConversation: forceNewConversation,
         }),
       });
 
-      const data = await response.json();
+      if (!response.ok) {
+        throw new Error("Failed to start streaming");
+      }
 
-      if (response.ok) {
-        setChatId(data.chatId);
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
 
-        const botMessage: ChatMessage = {
-          content: data.message,
-          sender: "bot",
-          messageType: "text",
-        };
+      if (!reader) {
+        throw new Error("No reader available");
+      }
 
-        setMessages((prev: ChatMessage[]) => [...prev, botMessage]);
-        // Real-time updates via Socket.IO - no need to track message count
+      let streamedContent = "";
 
-        // Check if should show modals
-        if (data.shouldEscalate) {
-          setShowEscalationModal(true);
-        } else if (data.requestsFollowUp) {
-          setShowFollowUpModal(true);
+      // Streaming configuration - adjust these values to control speed
+      const CHAR_DELAY = 25; // milliseconds between characters (25ms = ~40 chars/second)
+      const WORD_DELAY = 100; // extra delay after spaces/punctuation
+      
+      // Function to add delay between character updates
+      const streamWithDelay = async (newChunk: string) => {
+        const chars = newChunk.split('');
+        for (let i = 0; i < chars.length; i++) {
+          const char = chars[i];
+          streamedContent += char;
+          
+          setMessages((prev) => 
+            prev.map((msg) => 
+              msg.id === botMessageId 
+                ? { ...msg, content: streamedContent }
+                : msg
+            )
+          );
+          
+          // Variable delay based on character type
+          let delay = CHAR_DELAY;
+          if (char === ' ') delay += WORD_DELAY * 0.3; // Slight pause after words
+          if (['.', '!', '?', ',', ';', ':'].includes(char)) delay += WORD_DELAY; // Longer pause after punctuation
+          
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      };
+
+      while (true) {
+        const { done, value } = await reader.read();
+        
+        if (done) {
+          console.log("Stream completed, final content length:", streamedContent.length);
+          break;
         }
 
-        // Real-time messages will be received via Socket.IO
-      } else {
-        throw new Error(data.error || "Failed to send message");
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              
+              if (data.type === 'init') {
+                setChatId(data.chatId);
+                // Reset force new conversation flag after first message
+                if (forceNewConversation) {
+                  setForceNewConversation(false);
+                }
+              } else if (data.type === 'chunk') {
+                console.log("Received chunk:", data.content);
+                // Stream the chunk with delay
+                await streamWithDelay(data.content);
+              } else if (data.type === 'complete') {
+                console.log("Stream complete, final content:", streamedContent);
+                
+                // Handle escalation/follow-up decisions
+                if (data.requestsFollowUp) {
+                  setShowFollowUpModal(true);
+                } else if (data.shouldEscalate) {
+                  setShowEscalationModal(true);
+                }
+              } else if (data.type === 'error') {
+                throw new Error(data.error);
+              }
+            } catch (parseError) {
+              console.error("Error parsing streaming data:", parseError, "Line:", line);
+            }
+          }
+        }
       }
     } catch (error) {
       console.error("Error sending message:", error);
-      const errorMessage: ChatMessage = {
-        content: "Sorry, I encountered an error. Please try again.",
-        sender: "bot",
-        messageType: "text",
-      };
-      setMessages((prev) => [...prev, errorMessage]);
+      // Replace the empty bot message with error message
+      setMessages((prev) => 
+        prev.map((msg) => 
+          msg.id === botMessageId 
+            ? { ...msg, content: "Sorry, I encountered an error. Please try again." }
+            : msg
+        )
+      );
     } finally {
       setIsLoading(false);
     }
@@ -574,8 +684,12 @@ export default function Home() {
             </h1>
             <p className="text-sm text-gray-600">
               Get instant answers to your questions
-              <span className={`ml-2 ${isConnected ? 'text-green-500' : 'text-red-500'}`}>
-                • {isConnected ? 'Connected' : 'Connecting...'}
+              <span
+                className={`ml-2 ${
+                  isConnected ? "text-green-500" : "text-red-500"
+                }`}
+              >
+                • {isConnected ? "Connected" : "Connecting..."}
               </span>
             </p>
           </div>
@@ -624,7 +738,15 @@ export default function Home() {
                     : "bg-white text-gray-900 border border-gray-200"
                 }`}
               >
-                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                {message.sender === "bot" ? (
+                  <div className="text-sm">
+                    <MarkdownMessage content={message.content} />
+                  </div>
+                ) : (
+                  <p className="text-sm whitespace-pre-wrap">
+                    {message.content}
+                  </p>
+                )}
                 {message.sender === "admin" && (
                   <p className="text-xs mt-1 opacity-75">👨‍💼 Admin Response</p>
                 )}
@@ -711,7 +833,8 @@ export default function Home() {
         onSubmit={handleEmailSubmit}
         isReturningUser={isReturningUser}
         existingChats={existingChats}
+        currentEmail={currentModalEmail}
       />
     </div>
   );
-};
+}

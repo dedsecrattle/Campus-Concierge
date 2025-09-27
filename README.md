@@ -1,51 +1,70 @@
 # University Admissions Chatbot
 
-A modern web-based chatbot application built for university admissions, allowing prospective students to get instant answers to their questions while providing administrators with comprehensive chat management capabilities.
+A modern, production-ready web-based chatbot application built for university admissions, featuring real-time communication, comprehensive admin management, and intelligent AI-powered conversations.
 
 ## 🎯 Features
 
 ### Student Chat Interface
+
 - **Interactive Chat**: Real-time conversation with an AI-powered admissions chatbot
 - **Smart Escalation**: Automatic detection when human intervention is needed
 - **Follow-up Scheduling**: Easy booking of calls with admissions counselors
+- **Real-time Updates**: Live message delivery with Socket.IO integration
+- **Session Management**: Persistent chat sessions across page refreshes
 - **Responsive Design**: Works seamlessly on desktop and mobile devices
 
 ### Admin Dashboard
-- **Chat Overview**: Monitor all conversations with detailed statistics
-- **Real-time Intervention**: Jump into conversations to provide human assistance
-- **Student Management**: Track follow-up requests and contact information
-- **Analytics**: View escalation rates, message counts, and activity patterns
+
+- **Real-time Chat Monitoring**: Live view of all conversations with activity indicators
+- **Comprehensive Statistics**: Total chats, active sessions, escalations, and follow-ups
+- **User Activity Tracking**: Online/offline status with connection counts
+- **Chat Intervention**: Direct message sending with admin identification
+- **Message History**: Complete conversation view including admin interventions
+- **User Grouping**: Organized chat display by user sessions
+- **Advanced Analytics**: Message counts including admin responses
 
 ### Technical Features
+
 - **OpenAI Integration**: Powered by GPT-3.5-turbo for intelligent responses
-- **SQLite Database**: Lightweight, file-based database for easy deployment
-- **TypeScript**: Full type safety throughout the application
-- **Modern UI**: Built with Tailwind CSS for a polished user experience
+- **Prisma ORM**: Type-safe database operations with SQLite
+- **Socket.IO**: Real-time bidirectional communication
+- **TypeScript**: 100% type safety throughout the application
+- **Modern UI**: Built with Tailwind CSS and Lucide icons
+- **Activity Tracking**: User online status and connection monitoring
 
 ## 🏗️ Architecture & Design Decisions
 
 ### Tech Stack
+
 - **Frontend**: Next.js 15 with React 18 and TypeScript
-- **Styling**: Tailwind CSS for utility-first styling
-- **Database**: SQLite3 for simplicity and portability
+- **Backend**: Custom Node.js server with Socket.IO integration
+- **Database**: SQLite3 with Prisma ORM for type-safe operations
+- **Real-time**: Socket.IO for bidirectional communication
 - **AI**: OpenAI GPT-3.5-turbo API
+- **Styling**: Tailwind CSS for utility-first styling
 - **Icons**: Lucide React for consistent iconography
+- **Type Safety**: 100% TypeScript with strict mode enabled
 
 ### Key Design Decisions
 
-1. **SQLite Choice**: Selected for simplicity and ease of deployment. No complex database setup required.
+1. **Prisma + SQLite**: Prisma ORM provides type-safe database operations while SQLite ensures easy deployment without complex setup.
 
-2. **Next.js App Router**: Utilized the modern App Router for better performance and developer experience.
+2. **Custom Server Architecture**: Hybrid Next.js + Socket.IO server enables both SSR/API routes and real-time communication.
 
-3. **Server-Side API Routes**: All database operations and OpenAI calls happen server-side for security.
+3. **Real-time First**: Socket.IO integration provides instant message delivery and live admin monitoring.
 
-4. **Modular Components**: Clean separation between chat interface and admin dashboard.
+4. **Type-Safe Everything**: 100% TypeScript coverage with Prisma-generated types and strict type checking.
 
-5. **Type Safety**: Comprehensive TypeScript interfaces for all data structures.
+5. **Activity Tracking**: Comprehensive user online/offline status with connection counting for accurate presence detection.
+
+6. **Admin-Centric Design**: Chat interface optimized for admin perspective with proper message alignment and intervention capabilities.
+
+7. **Modular Architecture**: Clean separation between chat interface, admin dashboard, and real-time server components.
 
 ## 🚀 Getting Started
 
 ### Prerequisites
+
 - Node.js 18+ (recommended: 20+)
 - npm or yarn
 - OpenAI API key
@@ -53,39 +72,63 @@ A modern web-based chatbot application built for university admissions, allowing
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone <your-repo-url>
    cd havana-technical-test
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Set up environment variables**
+
    ```bash
-   cp .env.example .env.local
-   ```
-   
-   Edit `.env.local` and add your OpenAI API key:
-   ```env
-   OPENAI_API_KEY=your_openai_api_key_here
-   DATABASE_PATH=./database.sqlite
-   NEXT_PUBLIC_SCHOOL_NAME=Stanford University
+   cp .env.example .env
    ```
 
-4. **Run the development server**
+   Edit `.env` and add your configuration:
+
+   ```env
+   # OpenAI Configuration
+   OPENAI_API_KEY=your_openai_api_key_here
+
+   # Database Configuration
+   DATABASE_URL="file:./prisma/dev.db"
+
+   # Application Configuration
+   NEXT_PUBLIC_SCHOOL_NAME="Stanford University"
+   PORT=3000
+   ```
+
+4. **Initialize the database**
+
    ```bash
+   # Generate Prisma client
+   npx prisma generate
+
+   # Run database migrations
+   npx prisma migrate dev --name init
+   ```
+
+5. **Start the development server**
+
+   ```bash
+   # Start the custom server with Socket.IO
    npm run dev
    ```
 
-5. **Open your browser**
-   Navigate to [http://localhost:3000](http://localhost:3000)
+6. **Open your browser**
+   - **Student Chat**: [http://localhost:3000](http://localhost:3000)
+   - **Admin Dashboard**: [http://localhost:3000/admin](http://localhost:3000/admin)
 
 ## 📖 Usage Guide
 
 ### For Students
+
 1. Visit the main page at `http://localhost:3000`
 2. Start chatting with the admissions bot
 3. Ask questions about programs, admissions, campus life, etc.
@@ -93,38 +136,62 @@ A modern web-based chatbot application built for university admissions, allowing
 5. Book follow-up calls by providing your contact information
 
 ### For Administrators
+
 1. Access the admin dashboard at `http://localhost:3000/admin`
-2. View all chat conversations and statistics
-3. Click "View Details" on any chat to see the full conversation
-4. Send messages as an admin to intervene in conversations
-5. Monitor escalated chats and follow-up requests
+2. **Dashboard Overview**: View comprehensive statistics including:
+   - Total chats and active sessions
+   - Escalated conversations and follow-up requests
+   - Unique users and online activity
+3. **Real-time Monitoring**: See live user activity with online/offline indicators
+4. **Chat Management**: Click "View Details" on any chat to:
+   - View complete conversation history
+   - See both student and admin messages
+   - Send real-time interventions
+5. **Message Intervention**: Send messages that appear instantly to students
+6. **Activity Tracking**: Monitor user connections and session activity
 
 ## 🗄️ Database Schema
 
-The application uses three main tables:
+The application uses Prisma ORM with SQLite and includes three main tables with enhanced activity tracking:
 
-### `chats`
-- `id`: Unique chat identifier
-- `created_at`: Timestamp of chat creation
+### `chats` (Enhanced)
+
+- `id`: Unique chat identifier (cuid)
+- `createdAt`: Timestamp of chat creation
+- `updatedAt`: Last update timestamp (auto-managed)
 - `status`: Chat status (active, closed, escalated)
-- `escalated_to_human`: Boolean flag for human escalation
-- `follow_up_requested`: Boolean flag for follow-up requests
-- `student_name`: Optional student name
-- `student_email`: Optional student email
+- `escalatedToHuman`: Boolean flag for human escalation
+- `followUpRequested`: Boolean flag for follow-up requests
+- `studentName`: Optional student name
+- `studentEmail`: Optional student email
+- `sessionEmail`: Session-based email for user tracking
+- `isActive`: Boolean flag for active chats
+- **`userOnline`**: Real-time online status tracking
+- **`lastActivity`**: Timestamp of last user activity
+- **`connectionCount`**: Number of active connections
 
 ### `messages`
-- `id`: Unique message identifier
-- `chat_id`: Reference to parent chat
+
+- `id`: Unique message identifier (cuid)
+- `chatId`: Reference to parent chat (foreign key)
 - `content`: Message text content
 - `sender`: Message sender (user, bot, admin)
-- `timestamp`: Message timestamp
-- `message_type`: Type of message (text, system, escalation, follow_up)
+- `timestamp`: Message timestamp (auto-generated)
+- `messageType`: Type of message (text, system, escalation, follow_up)
 
 ### `admin_interventions`
-- `id`: Unique intervention identifier
-- `chat_id`: Reference to parent chat
-- `admin_message`: Admin message content
-- `timestamp`: Intervention timestamp
+
+- `id`: Unique intervention identifier (cuid)
+- `chatId`: Reference to parent chat (foreign key)
+- `adminMessage`: Admin message content
+- `timestamp`: Intervention timestamp (auto-generated)
+
+### Database Features
+
+- **Type Safety**: Full Prisma type generation for all operations
+- **Relationships**: Proper foreign key constraints and cascading deletes
+- **Indexing**: Optimized queries with indexes on `sessionEmail` and `userOnline`
+- **Activity Tracking**: Real-time user presence and connection monitoring
 
 ## 🤖 AI Integration
 
@@ -137,7 +204,9 @@ The chatbot uses OpenAI's GPT-3.5-turbo model with a carefully crafted system pr
 - Handles edge cases gracefully
 
 ### Escalation Logic
+
 The system automatically detects when to escalate based on:
+
 - Complex or sensitive questions
 - Requests for personalized advice
 - Technical application issues
@@ -146,100 +215,229 @@ The system automatically detects when to escalate based on:
 ## 🔧 API Endpoints
 
 ### Chat API
+
 - `POST /api/chat` - Send message and get bot response
-- `GET /api/chat?chatId=<id>` - Retrieve chat messages
+- `GET /api/chat/messages?chatId=<id>` - Retrieve chat messages (including admin interventions)
 - `POST /api/chat/escalate` - Escalate chat to human
 - `POST /api/chat/follow-up` - Request follow-up call
 
 ### Admin API
-- `GET /api/admin/chats` - Get all chats with statistics
-- `POST /api/admin/intervention` - Send admin message
+
+- `GET /api/admin/chats` - Get all chats with comprehensive statistics
+- `POST /api/admin/intervention` - Send admin message with real-time delivery
+
+### Session API
+
+- `POST /api/session` - Manage user sessions and chat retrieval
+
+### Real-time Events (Socket.IO)
+
+- `join-chat` - Join a chat room for real-time updates
+- `leave-chat` - Leave a chat room
+- `join-admin` - Join admin room for monitoring
+- `send-message` - Send real-time message
+- `admin-intervention` - Send admin intervention
+- `user-activity-changed` - Broadcast user online/offline status
 
 ## 🚀 Deployment
 
-### Environment Setup
-1. Set up your production environment variables
-2. Ensure your OpenAI API key is properly configured
-3. The SQLite database will be created automatically
+### Production Environment Setup
 
-### Vercel Deployment (Recommended)
+1. **Environment Variables**:
+
+   ```env
+   OPENAI_API_KEY=your_production_openai_key
+   DATABASE_URL="file:./prisma/production.db"
+   NEXT_PUBLIC_SCHOOL_NAME="Your University Name"
+   PORT=3000
+   NODE_ENV=production
+   ```
+
+2. **Database Setup**:
+
+   ```bash
+   # Generate Prisma client for production
+   npx prisma generate
+
+   # Run migrations
+   npx prisma migrate deploy
+   ```
+
+### Deployment Options
+
+#### Option 1: Traditional Node.js Hosting
+
+**Requirements**: Custom server support for Socket.IO
+
+- Railway, Render, DigitalOcean App Platform
+- Heroku (with custom buildpack)
+- VPS with Node.js
+
+**Steps**:
+
+1. Push code to your hosting platform
+2. Set environment variables
+3. Run build command: `npm run build`
+4. Start command: `npm start` (uses custom server)
+
+#### Option 2: Vercel (Limited)
+
+**Note**: Vercel doesn't support custom servers, so Socket.IO features will be disabled
+
 1. Push your code to GitHub
-2. Connect your repository to Vercel
+2. Connect repository to Vercel
 3. Add environment variables in Vercel dashboard
-4. Deploy!
+4. Deploy (real-time features will fallback to polling)
 
-### Alternative Deployment
-The application can be deployed on any Node.js hosting platform that supports:
-- Next.js applications
-- File system access (for SQLite database)
-- Environment variables
+### Production Considerations
+
+- **Database**: Consider PostgreSQL for production scale
+- **File Storage**: SQLite requires persistent file system
+- **Real-time**: Ensure hosting platform supports WebSocket connections
+- **Scaling**: Consider Redis for Socket.IO scaling across multiple instances
 
 ## 🧪 Testing the Application
 
 ### Manual Testing Scenarios
 
 1. **Basic Chat Flow**
+
    - Ask simple questions about the university
    - Verify bot responses are relevant and helpful
+   - Test session persistence across page refreshes
 
-2. **Escalation Testing**
+2. **Real-time Features**
+
+   - Open chat in one tab, admin dashboard in another
+   - Send messages and verify real-time delivery
+   - Test online/offline status indicators
+   - Verify connection counting accuracy
+
+3. **Escalation Testing**
+
    - Ask complex questions that should trigger escalation
    - Verify escalation modal appears
-   - Test escalation process
+   - Test escalation process and admin notification
 
-3. **Follow-up Testing**
+4. **Follow-up Testing**
+
    - Request information about scheduling a call
    - Verify follow-up modal appears
    - Test contact information submission
 
-4. **Admin Dashboard**
-   - Verify all chats appear in the dashboard
-   - Test admin intervention functionality
-   - Check statistics accuracy
+5. **Admin Dashboard**
+
+   - Verify all chats appear with correct statistics
+   - Test real-time admin intervention
+   - Check message count accuracy (including admin messages)
+   - Verify user activity tracking
+   - Test chat detail modal functionality
+
+6. **Multi-user Testing**
+   - Open multiple chat sessions
+   - Verify proper user separation and session management
+   - Test concurrent admin interventions
 
 ## 📝 Development Notes
 
-### Time Investment
-This project was completed in approximately 4 hours, focusing on:
-- Core functionality implementation
-- Clean, maintainable code structure
-- Comprehensive documentation
-- User experience optimization
+### Implementation Highlights
 
-### AI Usage
-AI tools were used for:
-- Code structure suggestions
-- TypeScript interface definitions
-- Tailwind CSS styling assistance
-- Documentation writing support
+This production-ready application features:
+
+- **100% TypeScript**: Complete type safety with Prisma-generated types
+- **Real-time Architecture**: Custom Node.js server with Socket.IO integration
+- **Advanced Admin Features**: Live monitoring, intervention capabilities, and activity tracking
+- **Scalable Database Design**: Prisma ORM with comprehensive relationship management
+- **Modern UI/UX**: Responsive design with real-time status indicators
+
+### Technical Achievements
+
+- **Type-Safe Database Operations**: Eliminated all `any` usage with proper Prisma types
+- **Real-time Communication**: Bidirectional Socket.IO integration for instant messaging
+- **Activity Tracking**: Comprehensive user presence detection with connection counting
+- **Admin-Optimized Interface**: Chat layout designed from administrator perspective
+- **Session Management**: Persistent chat sessions with proper user identification
+
+### Architecture Benefits
+
+- **Maintainable**: Clean separation of concerns with modular components
+- **Scalable**: Designed for easy horizontal scaling with Redis support
+- **Type-Safe**: 100% TypeScript coverage prevents runtime errors
+- **Real-time**: Instant message delivery and live admin monitoring
+- **Production-Ready**: Comprehensive error handling and edge case management
 
 ### Future Enhancements
-Potential improvements for production use:
-- Real-time WebSocket connections for live chat
-- User authentication and session management
-- Advanced analytics and reporting
-- Multi-language support
-- Integration with CRM systems
-- Automated testing suite
+
+Potential improvements for enterprise use:
+
+- **Authentication**: User login system with role-based access
+- **Analytics**: Advanced reporting and conversation analytics
+- **Multi-language**: Internationalization support
+- **CRM Integration**: Connect with existing customer management systems
+- **AI Improvements**: Fine-tuned models for specific university contexts
+- **Mobile App**: React Native companion application
+- **Testing Suite**: Automated testing with Jest and Playwright
 
 ## 🐛 Troubleshooting
 
 ### Common Issues
 
-1. **Database Connection Errors**
-   - Ensure the application has write permissions in the project directory
-   - Check that SQLite3 is properly installed
+1. **Prisma Generation Errors**
 
-2. **OpenAI API Errors**
+   ```bash
+   # If you encounter WebAssembly errors
+   node --experimental-wasm-reftypes node_modules/.bin/prisma generate
+
+   # Or try regenerating the client
+   npx prisma generate --force
+   ```
+
+2. **Database Migration Issues**
+
+   ```bash
+   # Reset database if needed
+   npx prisma migrate reset
+
+   # Apply migrations manually
+   npx prisma migrate deploy
+   ```
+
+3. **Socket.IO Connection Issues**
+
+   - Verify the custom server is running (not Next.js dev server)
+   - Check browser console for WebSocket connection errors
+   - Ensure port 3000 is not blocked by firewall
+
+4. **TypeScript Errors**
+
+   - Run `npx prisma generate` after schema changes
+   - Clear `.next` folder and restart development server
+   - Ensure all dependencies are properly installed
+
+5. **OpenAI API Errors**
+
    - Verify your API key is correct and has sufficient credits
-   - Check network connectivity
+   - Check network connectivity and API rate limits
 
-3. **Build Errors**
+6. **Build Errors**
    - Ensure Node.js version is 18 or higher
-   - Clear node_modules and reinstall dependencies
+   - Clear `node_modules` and reinstall dependencies
+   - Check that all environment variables are set
+
+### Development Tips
+
+- Use `npm run dev` to start the custom server with Socket.IO
+- Monitor browser console and server logs for real-time debugging
+- Use Prisma Studio (`npx prisma studio`) to inspect database contents
+- Test real-time features with multiple browser tabs/windows
 
 ### Support
-For issues or questions, please check the console logs for detailed error messages.
+
+For issues or questions:
+
+1. Check browser console and server logs for detailed error messages
+2. Verify all environment variables are properly configured
+3. Ensure database migrations have been applied successfully
 
 ## 📄 License
 

@@ -13,17 +13,9 @@ export async function POST(request: NextRequest) {
     const existingChats = await getChatsBySessionEmail(email);
     const activeChat = await findActiveChatByEmail(email);
 
-    // Add message counts to existing chats (simulated for now)
-    const chatsWithCounts = existingChats.map(chat => ({
-      ...chat,
-      _count: {
-        messages: 0 // This would be populated by a proper query
-      }
-    }));
-
     return NextResponse.json({
       hasExistingChats: existingChats.length > 0,
-      existingChats: chatsWithCounts,
+      existingChats: existingChats,
       activeChat,
     });
 

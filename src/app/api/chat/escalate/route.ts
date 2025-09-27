@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { v4 as uuidv4 } from 'uuid';
 import { escalateToHuman, addMessage } from '@/lib/database-prisma';
 
 export async function POST(request: NextRequest) {
@@ -14,9 +13,7 @@ export async function POST(request: NextRequest) {
     await escalateToHuman(chatId);
 
     // Add system message about escalation
-    const systemMessageId = uuidv4();
     await addMessage(
-      systemMessageId,
       chatId,
       'This conversation has been escalated to a human advisor. An admissions counselor will join the chat shortly.',
       'bot',

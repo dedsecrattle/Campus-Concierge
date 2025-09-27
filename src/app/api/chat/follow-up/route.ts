@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { v4 as uuidv4 } from 'uuid';
 import { requestFollowUp, addMessage } from '@/lib/database-prisma';
 
 export async function POST(request: NextRequest) {
@@ -14,12 +13,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Mark chat as requesting follow-up
-    await requestFollowUp(chatId, studentName, studentEmail);
+    await requestFollowUp(chatId);
 
     // Add system message about follow-up request
-    const systemMessageId = uuidv4();
     await addMessage(
-      systemMessageId,
       chatId,
       `Thank you, ${studentName}! We've received your request for a follow-up call. An admissions counselor will contact you at ${studentEmail} within 1-2 business days.`,
       'bot',

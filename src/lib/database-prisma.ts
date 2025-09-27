@@ -1,5 +1,7 @@
-import { prisma } from "./prisma";
+import { PrismaClient } from "@prisma/client";
 import type { Chat } from "@prisma/client";
+
+const prisma = new PrismaClient();
 
 // Chat operations
 export const createChat = async (
@@ -40,10 +42,17 @@ export const findActiveChatByEmail = async (
 // Get all chats for a session email
 export const getChatsBySessionEmail = async (
   sessionEmail: string
-): Promise<Chat[]> => {
+): Promise<(Chat & { _count: { messages: number } })[]> => {
   const prismaChats = await prisma.chat.findMany({
     where: {
       sessionEmail,
+    },
+    include: {
+      _count: {
+        select: {
+          messages: true,
+        },
+      },
     },
     orderBy: {
       createdAt: "desc",
@@ -115,6 +124,22 @@ export const requestFollowUp = async (chatId: string): Promise<Chat> => {
   return await prisma.chat.update({
     where: { id: chatId },
     data: { followUpRequested: true },
+  });
+};
+
+export const markPreviousChatsInactive = async (
+  sessionEmail: string,
+  currentChatId: string
+): Promise<void> => {
+  await prisma.chat.updateMany({
+    where: {
+      sessionEmail: sessionEmail,
+      id: { not: currentChatId },
+      isActive: true,
+    },
+    data: {
+      isActive: false,
+    },
   });
 };
 

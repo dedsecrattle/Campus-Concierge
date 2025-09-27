@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { v4 as uuidv4 } from 'uuid';
 import { addAdminIntervention } from '@/lib/database-prisma';
 
 export async function POST(request: NextRequest) {
@@ -15,16 +14,15 @@ export async function POST(request: NextRequest) {
 
     // Only add admin intervention to database (not to messages table)
     // The getMessagesByChat function will convert interventions to message format
-    const interventionId = uuidv4();
-    await addAdminIntervention(interventionId, chatId, message);
+    const intervention = await addAdminIntervention(chatId, message);
 
     // Emit real-time admin intervention via Socket.IO
-    const io = (global as any).io;
+    const io = (global as typeof globalThis).io;
     if (io) {
       io.to(chatId).emit('admin-intervention', {
         chatId,
         message: {
-          id: interventionId,
+          id: intervention.id,
           content: message,
           sender: 'admin',
           timestamp: new Date().toISOString()

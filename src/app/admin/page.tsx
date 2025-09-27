@@ -18,6 +18,7 @@ import type {
   ServerToClientEvents,
   ClientToServerEvents,
 } from "@/types/socket";
+import MarkdownMessage from "@/components/MarkdownMessage";
 
 interface ChatDetailModalProps {
   chat: ChatWithUserInfo | null;
@@ -113,7 +114,7 @@ const ChatDetailModal = ({
             <div>
               <span className="font-medium">Created:</span>
               <span className="ml-2">
-                {new Date(chat.createdAt).toLocaleDateString()}
+                {new Date(chat.createdAt).toLocaleDateString()} at {new Date(chat.createdAt).toLocaleTimeString()}
               </span>
             </div>
             <div>
@@ -163,9 +164,15 @@ const ChatDetailModal = ({
                       : "bg-purple-600 text-white"
                   }`}
                 >
-                  <p className="text-sm whitespace-pre-wrap">
-                    {message.content}
-                  </p>
+                  {message.sender === "bot" ? (
+                    <div className="text-sm">
+                      <MarkdownMessage content={message.content} />
+                    </div>
+                  ) : (
+                    <p className="text-sm whitespace-pre-wrap">
+                      {message.content}
+                    </p>
+                  )}
                   <p className="text-xs mt-1 opacity-75">
                     {message.sender === "admin"
                       ? "Admin"
@@ -310,6 +317,19 @@ export default function AdminDashboard() {
         return "bg-gray-100 text-gray-800";
       default:
         return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "active":
+        return "Active";
+      case "escalated":
+        return "Escalated";
+      case "closed":
+        return "Closed";
+      default:
+        return status; // fallback to original if unknown
     }
   };
 
@@ -476,14 +496,12 @@ export default function AdminDashboard() {
                             </div>
                             <div
                               className={`ml-2 w-2 h-2 rounded-full ${
-                                onlineUsers.has(chat.id) ||
-                                chat.userOnline
+                                onlineUsers.has(chat.id) || chat.userOnline
                                   ? "bg-green-500"
                                   : "bg-gray-300"
                               }`}
                               title={
-                                onlineUsers.has(chat.id) ||
-                                chat.userOnline
+                                onlineUsers.has(chat.id) || chat.userOnline
                                   ? "User is online"
                                   : "User is offline"
                               }
@@ -496,8 +514,7 @@ export default function AdminDashboard() {
                                 Returning
                               </span>
                             )}
-                            {(onlineUsers.has(chat.id) ||
-                              chat.userOnline) && (
+                            {(onlineUsers.has(chat.id) || chat.userOnline) && (
                               <span className="ml-1 inline-flex px-1 py-0.5 text-xs font-semibold rounded bg-green-100 text-green-800">
                                 Online
                               </span>
@@ -517,13 +534,8 @@ export default function AdminDashboard() {
                             chat.status
                           )}`}
                         >
-                          {chat.status}
+                          {getStatusLabel(chat.status)}
                         </span>
-                        {chat.escalatedToHuman && (
-                          <span className="ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                            Escalated
-                          </span>
-                        )}
                         {chat.followUpRequested && (
                           <span className="ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
                             Follow-up
@@ -531,20 +543,26 @@ export default function AdminDashboard() {
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {chat.totalMessageCount ||
-                          chat._count?.messages ||
-                          0}
+                        {chat.totalMessageCount || chat._count?.messages || 0}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {new Date(chat.createdAt).toLocaleDateString()}
+                        <div className="flex flex-col">
+                          <span>{new Date(chat.createdAt).toLocaleDateString()}</span>
+                          <span className="text-xs text-gray-500">
+                            {new Date(chat.createdAt).toLocaleTimeString()}
+                          </span>
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {chat.messages?.[0]?.timestamp ? (
-                          <div className="flex items-center">
-                            <Clock size={14} className="mr-1 text-gray-400" />
-                            {new Date(
-                              chat.messages[0].timestamp
-                            ).toLocaleTimeString()}
+                          <div className="flex flex-col">
+                            <div className="flex items-center">
+                              <Clock size={14} className="mr-1 text-gray-400" />
+                              <span>{new Date(chat.messages[0].timestamp).toLocaleDateString()}</span>
+                            </div>
+                            <span className="text-xs text-gray-500 ml-5">
+                              {new Date(chat.messages[0].timestamp).toLocaleTimeString()}
+                            </span>
                           </div>
                         ) : (
                           "-"

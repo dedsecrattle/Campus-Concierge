@@ -1,61 +1,110 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { v4 as uuidv4 } from 'uuid';
-import { createChat, addMessage, getMessagesByChat } from '@/lib/database-prisma';
-import { getChatbotResponse, shouldEscalateToHuman, wantsFollowUpCall, ChatMessage } from '@/lib/openai';
+import { NextRequest, NextResponse } from "next/server";
+import { v4 as uuidv4 } from "uuid";
+import {
+  createChat,
+  addMessage,
+  getMessagesByChat,
+  findActiveChatByEmail,
+  markPreviousChatsInactive,
+} from "@/lib/database-prisma";
+import {
+  getChatbotResponse,
+  makeDecision,
+  ChatMessage,
+} from "@/lib/openai";
 
 export async function POST(request: NextRequest) {
   try {
-    const { chatId, message, isNewChat, sessionEmail } = await request.json();
+    const { chatId, message, isNewChat, sessionEmail, forceNewConversation } =
+      await request.json();
 
     if (!message) {
-      return NextResponse.json({ error: 'Message is required' }, { status: 400 });
+      return NextResponse.json(
+        { error: "Message is required" },
+        { status: 400 }
+      );
     }
 
     let currentChatId = chatId;
 
-    // Create new chat if needed
+    // Handle chat session logic
     if (isNewChat || !currentChatId) {
-      currentChatId = uuidv4();
-      await createChat(currentChatId, sessionEmail);
+      // If user explicitly wants a new conversation, always create one
+      if (forceNewConversation) {
+        currentChatId = uuidv4();
+        await createChat(currentChatId, sessionEmail);
+        // Mark previous chats as inactive for this user
+        if (sessionEmail) {
+          await markPreviousChatsInactive(sessionEmail, currentChatId);
+        }
+      }
+      // If user has a session email, check for existing active chat first
+      else if (sessionEmail) {
+        const existingActiveChat = await findActiveChatByEmail(sessionEmail);
+        if (existingActiveChat) {
+          // Continue existing conversation instead of creating new one
+          currentChatId = existingActiveChat.id;
+        } else {
+          // No active chat found, create a new one
+          currentChatId = uuidv4();
+          await createChat(currentChatId, sessionEmail);
+        }
+      } else {
+        // No session email, create anonymous chat
+        currentChatId = uuidv4();
+        await createChat(currentChatId, sessionEmail);
+      }
     }
 
     // Add user message to database
-    const userMessageId = uuidv4();
-    await addMessage(userMessageId, currentChatId, message, 'user');
+    await addMessage(currentChatId, message, "user");
 
     // Get chat history for context
     const chatHistory = await getMessagesByChat(currentChatId);
-    
+
     // Convert to OpenAI format (excluding system messages)
     const openaiMessages: ChatMessage[] = chatHistory
-      .filter(msg => msg.sender !== 'admin' && msg.messageType !== 'system')
-      .map(msg => ({
-        role: msg.sender === 'user' ? 'user' : 'assistant',
-        content: msg.content
+      .filter((msg) => msg.sender !== "admin" && msg.messageType !== "system")
+      .map((msg) => ({
+        role: msg.sender === "user" ? "user" : "assistant",
+        content: msg.content,
       }));
 
     // Get chatbot response
     const botResponse = await getChatbotResponse(openaiMessages);
 
     // Add bot message to database
-    const botMessageId = uuidv4();
-    await addMessage(botMessageId, currentChatId, botResponse, 'bot');
+    await addMessage(currentChatId, botResponse, "bot");
 
-    // Check if should escalate or request follow-up
-    const shouldEscalate = shouldEscalateToHuman(message, botResponse);
-    const requestsFollowUp = wantsFollowUpCall(message, botResponse);
+    // Get conversation context for better decision making
+    const existingMessages = await getMessagesByChat(currentChatId);
+    const conversationLength = existingMessages.length;
+    
+    // Use enhanced decision engine
+    const decision = makeDecision({
+      userMessage: message,
+      botResponse,
+      conversationLength,
+      timeOfDay: new Date()
+    });
+    
+    // Backward compatibility with existing logic
+    const shouldEscalate = decision.action === 'escalate' && decision.confidence >= 60;
+    const requestsFollowUp = decision.action === 'followup' && decision.confidence >= 60;
+    
+    // Log decision for debugging (optional)
+    console.log(`Decision: ${decision.action} (confidence: ${decision.confidence}%) - ${decision.reason}`);
 
     return NextResponse.json({
       chatId: currentChatId,
       message: botResponse,
       shouldEscalate,
-      requestsFollowUp
+      requestsFollowUp,
     });
-
   } catch (error) {
-    console.error('Chat API error:', error);
+    console.error("Chat API error:", error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
@@ -64,19 +113,21 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const chatId = searchParams.get('chatId');
+    const chatId = searchParams.get("chatId");
 
     if (!chatId) {
-      return NextResponse.json({ error: 'Chat ID is required' }, { status: 400 });
+      return NextResponse.json(
+        { error: "Chat ID is required" },
+        { status: 400 }
+      );
     }
 
     const messages = await getMessagesByChat(chatId);
     return NextResponse.json({ messages });
-
   } catch (error) {
-    console.error('Get chat messages error:', error);
+    console.error("Get chat messages error:", error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
