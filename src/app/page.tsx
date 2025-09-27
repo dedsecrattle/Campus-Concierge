@@ -1,7 +1,15 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Send, User, Bot, AlertCircle, Calendar, Settings, AlertTriangle } from "lucide-react";
+import {
+  Send,
+  User,
+  Bot,
+  AlertCircle,
+  Calendar,
+  Settings,
+  AlertTriangle,
+} from "lucide-react";
 import { Message, Chat } from "@/types";
 import Link from "next/link";
 import { io, Socket } from "socket.io-client";
@@ -85,7 +93,7 @@ const FollowUpModal = ({ isOpen, onClose, onSubmit }: FollowUpModalProps) => {
   const [email, setEmail] = useState("");
 
   console.log("FollowUpModal render - isOpen:", isOpen);
-  
+
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -163,7 +171,7 @@ const EmailModal = ({
 }: EmailModalProps) => {
   const [email, setEmail] = useState("");
   const [selectedChatId, setSelectedChatId] = useState<string>("");
-  
+
   // Use currentEmail if provided, otherwise use local state
   const effectiveEmail = currentEmail || email;
 
@@ -197,8 +205,8 @@ const EmailModal = ({
         {isReturningUser && existingChats && existingChats.length > 0 ? (
           <div>
             <p className="text-gray-600 mb-4">
-              We found existing conversations for {effectiveEmail}. Would you like to
-              continue a previous chat or start a new one?
+              We found existing conversations for {effectiveEmail}. Would you
+              like to continue a previous chat or start a new one?
             </p>
 
             <div className="mb-4 max-h-32 overflow-y-auto">
@@ -213,7 +221,8 @@ const EmailModal = ({
                   onClick={() => setSelectedChatId(chat.id)}
                 >
                   <div className="text-sm font-medium">
-                    Chat from {new Date(chat.createdAt).toLocaleDateString()} at {new Date(chat.createdAt).toLocaleTimeString()}
+                    Chat from {new Date(chat.createdAt).toLocaleDateString()} at{" "}
+                    {new Date(chat.createdAt).toLocaleTimeString()}
                   </div>
                   <div className="text-xs text-gray-500">
                     Status: {chat.status} • Messages:{" "}
@@ -530,63 +539,67 @@ export default function Home() {
       // Streaming configuration - adjust these values to control speed
       const CHAR_DELAY = 25; // milliseconds between characters (25ms = ~40 chars/second)
       const WORD_DELAY = 100; // extra delay after spaces/punctuation
-      
+
       // Function to add delay between character updates
       const streamWithDelay = async (newChunk: string) => {
-        const chars = newChunk.split('');
+        const chars = newChunk.split("");
         for (let i = 0; i < chars.length; i++) {
           const char = chars[i];
           streamedContent += char;
-          
-          setMessages((prev) => 
-            prev.map((msg) => 
-              msg.id === botMessageId 
+
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === botMessageId
                 ? { ...msg, content: streamedContent }
                 : msg
             )
           );
-          
+
           // Variable delay based on character type
           let delay = CHAR_DELAY;
-          if (char === ' ') delay += WORD_DELAY * 0.3; // Slight pause after words
-          if (['.', '!', '?', ',', ';', ':'].includes(char)) delay += WORD_DELAY; // Longer pause after punctuation
-          
-          await new Promise(resolve => setTimeout(resolve, delay));
+          if (char === " ") delay += WORD_DELAY * 0.3; // Slight pause after words
+          if ([".", "!", "?", ",", ";", ":"].includes(char))
+            delay += WORD_DELAY; // Longer pause after punctuation
+
+          await new Promise((resolve) => setTimeout(resolve, delay));
         }
       };
 
       while (true) {
         const { done, value } = await reader.read();
-        
+
         if (done) {
-          console.log("Stream completed, final content length:", streamedContent.length);
+          console.log(
+            "Stream completed, final content length:",
+            streamedContent.length
+          );
           break;
         }
 
         const chunk = decoder.decode(value);
-        const lines = chunk.split('\n');
+        const lines = chunk.split("\n");
 
         for (const line of lines) {
-          if (line.startsWith('data: ')) {
+          if (line.startsWith("data: ")) {
             try {
               const data = JSON.parse(line.slice(6));
-              
-              if (data.type === 'init') {
+
+              if (data.type === "init") {
                 setChatId(data.chatId);
                 // Reset force new conversation flag after first message
                 if (forceNewConversation) {
                   setForceNewConversation(false);
                 }
-              } else if (data.type === 'chunk') {
+              } else if (data.type === "chunk") {
                 console.log("Received chunk:", data.content);
                 // Stream the chunk with delay
                 await streamWithDelay(data.content);
-              } else if (data.type === 'complete') {
+              } else if (data.type === "complete") {
                 console.log("Stream complete, final content:", streamedContent);
                 console.log("Decision data:", data.decision);
                 console.log("Should escalate:", data.shouldEscalate);
                 console.log("Requests follow-up:", data.requestsFollowUp);
-                
+
                 // Handle escalation/follow-up decisions
                 if (data.requestsFollowUp) {
                   console.log("Opening follow-up modal");
@@ -597,11 +610,16 @@ export default function Home() {
                 } else {
                   console.log("No action triggered");
                 }
-              } else if (data.type === 'error') {
+              } else if (data.type === "error") {
                 throw new Error(data.error);
               }
             } catch (parseError) {
-              console.error("Error parsing streaming data:", parseError, "Line:", line);
+              console.error(
+                "Error parsing streaming data:",
+                parseError,
+                "Line:",
+                line
+              );
             }
           }
         }
@@ -609,10 +627,13 @@ export default function Home() {
     } catch (error) {
       console.error("Error sending message:", error);
       // Replace the empty bot message with error message
-      setMessages((prev) => 
-        prev.map((msg) => 
-          msg.id === botMessageId 
-            ? { ...msg, content: "Sorry, I encountered an error. Please try again." }
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === botMessageId
+            ? {
+                ...msg,
+                content: "Sorry, I encountered an error. Please try again.",
+              }
             : msg
         )
       );
@@ -688,8 +709,8 @@ export default function Home() {
   return (
     <div className="flex flex-col h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="flex items-center justify-between">
+      <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
               {process.env.NEXT_PUBLIC_SCHOOL_NAME || "Stanford University"}{" "}
@@ -722,7 +743,7 @@ export default function Home() {
           {messages.map((message, index) => (
             <div
               key={index}
-              className={`flex items-start space-x-3 ${
+              className={`flex items-start gap-2.5 sm:gap-3 ${
                 message.sender === "user" ? "justify-end" : "justify-start"
               }`}
             >
@@ -741,7 +762,7 @@ export default function Home() {
               )}
 
               <div
-                className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                className={`max-w-[85%] sm:max-w-md px-3.5 py-2 rounded-lg ${
                   message.sender === "user"
                     ? "bg-blue-600 text-white"
                     : message.sender === "admin"
@@ -804,28 +825,34 @@ export default function Home() {
 
       {/* Manual Action Buttons */}
       {chatId && (
-        <div className="bg-gray-50 border-t border-gray-200 px-6 py-3">
+        <div className="bg-gray-50 border-t border-gray-200 px-4 sm:px-6 py-3">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-2">
               <p className="text-xs text-gray-600">Need more help?</p>
             </div>
-            <div className="flex items-center justify-center space-x-3 flex-wrap gap-2">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
               <button
                 onClick={() => setShowFollowUpModal(true)}
                 disabled={followUpRequested}
                 className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors text-sm shadow-sm ${
                   followUpRequested
-                    ? 'bg-green-400 text-white cursor-not-allowed'
-                    : 'bg-green-600 text-white hover:bg-green-700'
+                    ? "bg-green-400 text-white cursor-not-allowed"
+                    : "bg-green-600 text-white hover:bg-green-700"
                 }`}
-                title={followUpRequested ? "Follow-up already requested" : "Schedule a call with an admissions counselor"}
+                title={
+                  followUpRequested
+                    ? "Follow-up already requested"
+                    : "Schedule a call with an admissions counselor"
+                }
               >
                 <Calendar size={16} />
                 <span className="hidden sm:inline">
-                  {followUpRequested ? 'Follow-up Requested ✓' : 'Request Follow-up Call'}
+                  {followUpRequested
+                    ? "Follow-up Requested ✓"
+                    : "Request Follow-up Call"}
                 </span>
                 <span className="sm:hidden">
-                  {followUpRequested ? 'Requested ✓' : 'Follow-up'}
+                  {followUpRequested ? "Requested ✓" : "Follow-up"}
                 </span>
               </button>
               <button
@@ -833,17 +860,23 @@ export default function Home() {
                 disabled={escalationRequested}
                 className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors text-sm shadow-sm ${
                   escalationRequested
-                    ? 'bg-orange-400 text-white cursor-not-allowed'
-                    : 'bg-orange-600 text-white hover:bg-orange-700'
+                    ? "bg-orange-400 text-white cursor-not-allowed"
+                    : "bg-orange-600 text-white hover:bg-orange-700"
                 }`}
-                title={escalationRequested ? "Already escalated to human" : "Connect with a human advisor immediately"}
+                title={
+                  escalationRequested
+                    ? "Already escalated to human"
+                    : "Connect with a human advisor immediately"
+                }
               >
                 <AlertTriangle size={16} />
                 <span className="hidden sm:inline">
-                  {escalationRequested ? 'Escalated to Human ✓' : 'Talk to Human Now'}
+                  {escalationRequested
+                    ? "Escalated to Human ✓"
+                    : "Talk to Human Now"}
                 </span>
                 <span className="sm:hidden">
-                  {escalationRequested ? 'Escalated ✓' : 'Human Help'}
+                  {escalationRequested ? "Escalated ✓" : "Human Help"}
                 </span>
               </button>
             </div>
@@ -852,24 +885,22 @@ export default function Home() {
       )}
 
       {/* Input Area */}
-      <div className="bg-white border-t border-gray-200 px-6 py-4">
+      <div className="bg-white border-t border-gray-200 px-4 sm:px-6 py-3">
         <div className="max-w-4xl mx-auto">
-          <div className="flex space-x-3">
-            <div className="flex-1">
-              <textarea
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Type your message here..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                rows={1}
-                disabled={isLoading}
-              />
-            </div>
+          <div className="flex flex-col sm:flex-row items-center gap-2 sm:space-x-3">
+            <textarea
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Type your message here..."
+              className="w-full flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none min-h-[48px]"
+              rows={1}
+              disabled={isLoading}
+            />
             <button
               onClick={sendMessage}
               disabled={!inputMessage.trim() || isLoading}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full sm:w-auto px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-shrink-0"
             >
               <Send size={16} />
             </button>

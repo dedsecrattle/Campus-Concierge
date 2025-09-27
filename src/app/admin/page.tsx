@@ -76,10 +76,10 @@ const ChatDetailModal = ({
   if (!isOpen || !chat) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-full flex flex-col">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold text-gray-900">
               Chat Details
@@ -97,8 +97,8 @@ const ChatDetailModal = ({
         </div>
 
         {/* Chat Info */}
-        <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 bg-gray-50 border-b border-gray-200">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm">
             <div>
               <span className="font-medium">Status:</span>
               <span
@@ -116,7 +116,8 @@ const ChatDetailModal = ({
             <div>
               <span className="font-medium">Created:</span>
               <span className="ml-2">
-                {new Date(chat.createdAt).toLocaleDateString()} at {new Date(chat.createdAt).toLocaleTimeString()}
+                {new Date(chat.createdAt).toLocaleDateString()} at{" "}
+                {new Date(chat.createdAt).toLocaleTimeString()}
               </span>
             </div>
             <div>
@@ -146,7 +147,7 @@ const ChatDetailModal = ({
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
           <div className="space-y-4">
             {messages.map((message) => (
               <div
@@ -190,20 +191,20 @@ const ChatDetailModal = ({
         </div>
 
         {/* Admin Message Input */}
-        <div className="px-6 py-4 border-t border-gray-200">
-          <div className="flex space-x-3">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-200">
+          <div className="flex flex-col sm:flex-row items-center gap-2 sm:space-x-3">
             <input
               type="text"
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               placeholder="Type your message..."
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
               onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
             />
             <button
               onClick={handleSendMessage}
               disabled={!newMessage.trim() || loading}
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full sm:w-auto px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-shrink-0"
             >
               <Send size={16} />
             </button>
@@ -385,7 +386,7 @@ export default function AdminDashboard() {
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6 mb-8">
           <div className="bg-white rounded-lg p-6 shadow-sm">
             <div className="flex items-center">
               <MessageCircle className="h-8 w-8 text-blue-600" />
@@ -424,7 +425,7 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <div 
+          <div
             className="bg-white rounded-lg p-6 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
             onClick={() => openFollowUpModal()}
           >
@@ -473,7 +474,7 @@ export default function AdminDashboard() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
+              <table className="min-w-full divide-y divide-gray-200 whitespace-nowrap">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -564,7 +565,9 @@ export default function AdminDashboard() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         <div className="flex flex-col">
-                          <span>{new Date(chat.createdAt).toLocaleDateString()}</span>
+                          <span>
+                            {new Date(chat.createdAt).toLocaleDateString()}
+                          </span>
                           <span className="text-xs text-gray-500">
                             {new Date(chat.createdAt).toLocaleTimeString()}
                           </span>
@@ -575,10 +578,16 @@ export default function AdminDashboard() {
                           <div className="flex flex-col">
                             <div className="flex items-center">
                               <Clock size={14} className="mr-1 text-gray-400" />
-                              <span>{new Date(chat.messages[0].timestamp).toLocaleDateString()}</span>
+                              <span>
+                                {new Date(
+                                  chat.messages[0].timestamp
+                                ).toLocaleDateString()}
+                              </span>
                             </div>
                             <span className="text-xs text-gray-500 ml-5">
-                              {new Date(chat.messages[0].timestamp).toLocaleTimeString()}
+                              {new Date(
+                                chat.messages[0].timestamp
+                              ).toLocaleTimeString()}
                             </span>
                           </div>
                         ) : (
