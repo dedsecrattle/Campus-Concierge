@@ -283,39 +283,6 @@ The system automatically detects when to escalate based on:
    npx prisma migrate deploy
    ```
 
-### Deployment Options
-
-#### Option 1: Traditional Node.js Hosting
-
-**Requirements**: Custom server support for Socket.IO
-
-- Railway, Render, DigitalOcean App Platform
-- Heroku (with custom buildpack)
-- VPS with Node.js
-
-**Steps**:
-
-1. Push code to your hosting platform
-2. Set environment variables
-3. Run build command: `npm run build`
-4. Start command: `npm start` (uses custom server)
-
-#### Option 2: Vercel (Limited)
-
-**Note**: Vercel doesn't support custom servers, so Socket.IO features will be disabled
-
-1. Push your code to GitHub
-2. Connect repository to Vercel
-3. Add environment variables in Vercel dashboard
-4. Deploy (real-time features will fallback to polling)
-
-### Production Considerations
-
-- **Database**: Consider PostgreSQL for production scale
-- **File Storage**: SQLite requires persistent file system
-- **Real-time**: Ensure hosting platform supports WebSocket connections
-- **Scaling**: Consider Redis for Socket.IO scaling across multiple instances
-
 ## 🧪 Testing the Application
 
 ### Manual Testing Scenarios
@@ -371,34 +338,6 @@ This production-ready application features:
 - **Advanced Admin Features**: Live monitoring, intervention capabilities, and activity tracking
 - **Scalable Database Design**: Prisma ORM with comprehensive relationship management
 - **Modern UI/UX**: Responsive design with real-time status indicators
-
-### Technical Achievements
-
-- **Type-Safe Database Operations**: Eliminated all `any` usage with proper Prisma types
-- **Real-time Communication**: Bidirectional Socket.IO integration for instant messaging
-- **Activity Tracking**: Comprehensive user presence detection with connection counting
-- **Admin-Optimized Interface**: Chat layout designed from administrator perspective
-- **Session Management**: Persistent chat sessions with proper user identification
-
-### Architecture Benefits
-
-- **Maintainable**: Clean separation of concerns with modular components
-- **Scalable**: Designed for easy horizontal scaling with Redis support
-- **Type-Safe**: 100% TypeScript coverage prevents runtime errors
-- **Real-time**: Instant message delivery and live admin monitoring
-- **Production-Ready**: Comprehensive error handling and edge case management
-
-### Future Enhancements
-
-Potential improvements for enterprise use:
-
-- **Authentication**: User login system with role-based access
-- **Analytics**: Advanced reporting and conversation analytics
-- **Multi-language**: Internationalization support
-- **CRM Integration**: Connect with existing customer management systems
-- **AI Improvements**: Fine-tuned models for specific university contexts
-- **Mobile App**: React Native companion application
-- **Testing Suite**: Automated testing with Jest and Playwright
 
 ## 🐛 Troubleshooting
 
@@ -460,7 +399,3 @@ For issues or questions:
 1. Check browser console and server logs for detailed error messages
 2. Verify all environment variables are properly configured
 3. Ensure database migrations have been applied successfully
-
-## 📄 License
-
-This project is created for the Havana technical assessment and is not intended for commercial use.
