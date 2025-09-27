@@ -1,5 +1,5 @@
 // Re-export Prisma generated types
-export type { Chat, Message, AdminIntervention } from "@prisma/client";
+export type { Chat, Message, AdminIntervention, FollowUp } from "@prisma/client";
 import type { Chat, Message, AdminIntervention } from "@prisma/client";
 
 // Extended types for UI components
@@ -31,4 +31,24 @@ export interface ChatbotResponse {
   message: string;
   shouldEscalate: boolean;
   requestsFollowUp: boolean;
+}
+
+// Follow-up related types
+export interface FollowUpWithChat {
+  id: string;
+  chatId: string;
+  studentName: string;
+  studentEmail: string;
+  requestedAt: Date;
+  status: string;
+  notes?: string;
+  contactedAt?: Date;
+  completedAt?: Date;
+  chat: {
+    id: string;
+    sessionEmail?: string;
+    studentName?: string;
+    studentEmail?: string;
+    createdAt: Date;
+  };
 }

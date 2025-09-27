@@ -7,11 +7,7 @@ import {
   findActiveChatByEmail,
   markPreviousChatsInactive,
 } from "@/lib/database-prisma";
-import {
-  getChatbotResponse,
-  makeDecision,
-  ChatMessage,
-} from "@/lib/openai";
+import { getChatbotResponse, makeDecision, ChatMessage } from "@/lib/openai";
 
 export async function POST(request: NextRequest) {
   try {
@@ -79,21 +75,20 @@ export async function POST(request: NextRequest) {
     // Get conversation context for better decision making
     const existingMessages = await getMessagesByChat(currentChatId);
     const conversationLength = existingMessages.length;
-    
+
     // Use enhanced decision engine
     const decision = makeDecision({
       userMessage: message,
       botResponse,
       conversationLength,
-      timeOfDay: new Date()
+      timeOfDay: new Date(),
     });
-    
+
     // Backward compatibility with existing logic
-    const shouldEscalate = decision.action === 'escalate' && decision.confidence >= 60;
-    const requestsFollowUp = decision.action === 'followup' && decision.confidence >= 60;
-    
-    // Log decision for debugging (optional)
-    console.log(`Decision: ${decision.action} (confidence: ${decision.confidence}%) - ${decision.reason}`);
+    const shouldEscalate =
+      decision.action === "escalate" && decision.confidence >= 50;
+    const requestsFollowUp =
+      decision.action === "followup" && decision.confidence >= 50;
 
     return NextResponse.json({
       chatId: currentChatId,

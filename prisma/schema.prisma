@@ -28,6 +28,7 @@ model Chat {
   // Relations
   messages           Message[]
   adminInterventions AdminIntervention[]
+  followUps          FollowUp[]
 
   @@index([sessionEmail])
   @@index([userOnline])
@@ -58,4 +59,21 @@ model AdminIntervention {
   chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
 
   @@map("admin_interventions")
+}
+
+model FollowUp {
+  id           String   @id @default(cuid())
+  chatId       String   @map("chat_id")
+  studentName  String   @map("student_name")
+  studentEmail String   @map("student_email")
+  requestedAt  DateTime @default(now()) @map("requested_at")
+  status       String   @default("pending") // pending, contacted, completed, cancelled
+  notes        String?  // Admin notes about the follow-up
+  contactedAt  DateTime? @map("contacted_at")
+  completedAt  DateTime? @map("completed_at")
+
+  // Relations
+  chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@map("follow_ups")
 }

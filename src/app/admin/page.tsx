@@ -9,6 +9,7 @@ import {
   AlertTriangle,
   Calendar,
   Send,
+  Eye,
 } from "lucide-react";
 import { Message } from "@/types";
 import { ChatWithUserInfo } from "@/types/admin";
@@ -19,6 +20,7 @@ import type {
   ClientToServerEvents,
 } from "@/types/socket";
 import MarkdownMessage from "@/components/MarkdownMessage";
+import FollowUpModal from "@/components/FollowUpModal";
 
 interface ChatDetailModalProps {
   chat: ChatWithUserInfo | null;
@@ -218,6 +220,8 @@ export default function AdminDashboard() {
     null
   );
   const [showChatModal, setShowChatModal] = useState(false);
+  const [showFollowUpModal, setShowFollowUpModal] = useState(false);
+  const [followUpChatId, setFollowUpChatId] = useState<string | undefined>();
   const [loading, setLoading] = useState(true);
   const [, setSocket] = useState<Socket<
     ServerToClientEvents,
@@ -305,6 +309,16 @@ export default function AdminDashboard() {
   const openChatDetail = (chat: ChatWithUserInfo) => {
     setSelectedChat(chat);
     setShowChatModal(true);
+  };
+
+  const openFollowUpModal = (chatId?: string) => {
+    setFollowUpChatId(chatId);
+    setShowFollowUpModal(true);
+  };
+
+  const openChatFollowUps = (chatId: string) => {
+    setFollowUpChatId(chatId);
+    setShowFollowUpModal(true);
   };
 
   const getStatusColor = (status: string) => {
@@ -410,7 +424,10 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg p-6 shadow-sm">
+          <div 
+            className="bg-white rounded-lg p-6 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => openFollowUpModal()}
+          >
             <div className="flex items-center">
               <Calendar className="h-8 w-8 text-purple-600" />
               <div className="ml-4">
@@ -569,12 +586,23 @@ export default function AdminDashboard() {
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button
-                          onClick={() => openChatDetail(chat)}
-                          className="text-blue-600 hover:text-blue-900 transition-colors"
-                        >
-                          View Details
-                        </button>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => openChatDetail(chat)}
+                            className="text-blue-600 hover:text-blue-900 transition-colors"
+                          >
+                            View Details
+                          </button>
+                          {chat.followUpRequested && (
+                            <button
+                              onClick={() => openChatFollowUps(chat.id)}
+                              className="text-purple-600 hover:text-purple-900 transition-colors flex items-center"
+                            >
+                              <Eye size={14} className="mr-1" />
+                              Follow-ups
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -591,6 +619,13 @@ export default function AdminDashboard() {
         isOpen={showChatModal}
         onClose={() => setShowChatModal(false)}
         onSendMessage={handleSendAdminMessage}
+      />
+
+      {/* Follow-up Modal */}
+      <FollowUpModal
+        isOpen={showFollowUpModal}
+        onClose={() => setShowFollowUpModal(false)}
+        chatId={followUpChatId}
       />
     </div>
   );

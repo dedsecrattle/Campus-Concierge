@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requestFollowUp, addMessage } from '@/lib/database-prisma';
+import { requestFollowUp, addMessage, createFollowUp } from '@/lib/database-prisma';
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,6 +15,9 @@ export async function POST(request: NextRequest) {
     // Mark chat as requesting follow-up
     await requestFollowUp(chatId);
 
+    // Create follow-up record with detailed information
+    const followUp = await createFollowUp(chatId, studentName, studentEmail);
+
     // Add system message about follow-up request
     await addMessage(
       chatId,
@@ -23,7 +26,10 @@ export async function POST(request: NextRequest) {
       'system'
     );
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ 
+      success: true, 
+      followUpId: followUp.id 
+    });
 
   } catch (error) {
     console.error('Follow-up request error:', error);

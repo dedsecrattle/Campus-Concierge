@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
           });
           
           const shouldEscalate = decision.action === 'escalate' && decision.confidence >= 60;
-          const requestsFollowUp = decision.action === 'followup' && decision.confidence >= 60;
+          const requestsFollowUp = decision.action === 'followup' && decision.confidence >= 50;
 
           // Send final data with decision results
           const finalData = {

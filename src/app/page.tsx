@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Send, User, Bot, AlertCircle, Calendar, Settings } from "lucide-react";
+import { Send, User, Bot, AlertCircle, Calendar, Settings, AlertTriangle } from "lucide-react";
 import { Message, Chat } from "@/types";
 import Link from "next/link";
 import { io, Socket } from "socket.io-client";
@@ -84,6 +84,8 @@ const FollowUpModal = ({ isOpen, onClose, onSubmit }: FollowUpModalProps) => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
 
+  console.log("FollowUpModal render - isOpen:", isOpen);
+  
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -278,6 +280,8 @@ export default function Home() {
   const [chatId, setChatId] = useState<string | null>(null);
   const [showEscalationModal, setShowEscalationModal] = useState(false);
   const [showFollowUpModal, setShowFollowUpModal] = useState(false);
+  const [escalationRequested, setEscalationRequested] = useState(false);
+  const [followUpRequested, setFollowUpRequested] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   // Removed: polling-related state variables (lastMessageCount, isRefreshing) - now using Socket.IO
   const [sessionEmail, setSessionEmail] = useState<string>("");
@@ -579,12 +583,19 @@ export default function Home() {
                 await streamWithDelay(data.content);
               } else if (data.type === 'complete') {
                 console.log("Stream complete, final content:", streamedContent);
+                console.log("Decision data:", data.decision);
+                console.log("Should escalate:", data.shouldEscalate);
+                console.log("Requests follow-up:", data.requestsFollowUp);
                 
                 // Handle escalation/follow-up decisions
                 if (data.requestsFollowUp) {
+                  console.log("Opening follow-up modal");
                   setShowFollowUpModal(true);
                 } else if (data.shouldEscalate) {
+                  console.log("Opening escalation modal");
                   setShowEscalationModal(true);
+                } else {
+                  console.log("No action triggered");
                 }
               } else if (data.type === 'error') {
                 throw new Error(data.error);
@@ -631,6 +642,7 @@ export default function Home() {
 
       setMessages((prev) => [...prev, systemMessage]);
       setShowEscalationModal(false);
+      setEscalationRequested(true);
     } catch (error) {
       console.error("Error escalating chat:", error);
     }
@@ -660,6 +672,7 @@ export default function Home() {
 
       setMessages((prev) => [...prev, systemMessage]);
       setShowFollowUpModal(false);
+      setFollowUpRequested(true);
     } catch (error) {
       console.error("Error requesting follow-up:", error);
     }
@@ -788,6 +801,55 @@ export default function Home() {
           <div ref={messagesEndRef} />
         </div>
       </div>
+
+      {/* Manual Action Buttons */}
+      {chatId && (
+        <div className="bg-gray-50 border-t border-gray-200 px-6 py-3">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-2">
+              <p className="text-xs text-gray-600">Need more help?</p>
+            </div>
+            <div className="flex items-center justify-center space-x-3 flex-wrap gap-2">
+              <button
+                onClick={() => setShowFollowUpModal(true)}
+                disabled={followUpRequested}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors text-sm shadow-sm ${
+                  followUpRequested
+                    ? 'bg-green-400 text-white cursor-not-allowed'
+                    : 'bg-green-600 text-white hover:bg-green-700'
+                }`}
+                title={followUpRequested ? "Follow-up already requested" : "Schedule a call with an admissions counselor"}
+              >
+                <Calendar size={16} />
+                <span className="hidden sm:inline">
+                  {followUpRequested ? 'Follow-up Requested ✓' : 'Request Follow-up Call'}
+                </span>
+                <span className="sm:hidden">
+                  {followUpRequested ? 'Requested ✓' : 'Follow-up'}
+                </span>
+              </button>
+              <button
+                onClick={() => setShowEscalationModal(true)}
+                disabled={escalationRequested}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors text-sm shadow-sm ${
+                  escalationRequested
+                    ? 'bg-orange-400 text-white cursor-not-allowed'
+                    : 'bg-orange-600 text-white hover:bg-orange-700'
+                }`}
+                title={escalationRequested ? "Already escalated to human" : "Connect with a human advisor immediately"}
+              >
+                <AlertTriangle size={16} />
+                <span className="hidden sm:inline">
+                  {escalationRequested ? 'Escalated to Human ✓' : 'Talk to Human Now'}
+                </span>
+                <span className="sm:hidden">
+                  {escalationRequested ? 'Escalated ✓' : 'Human Help'}
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Input Area */}
       <div className="bg-white border-t border-gray-200 px-6 py-4">

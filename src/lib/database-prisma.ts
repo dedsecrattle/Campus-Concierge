@@ -127,6 +127,90 @@ export const requestFollowUp = async (chatId: string): Promise<Chat> => {
   });
 };
 
+// FollowUp operations
+export const createFollowUp = async (
+  chatId: string,
+  studentName: string,
+  studentEmail: string
+) => {
+  return await prisma.followUp.create({
+    data: {
+      chatId,
+      studentName,
+      studentEmail,
+    },
+  });
+};
+
+export const getFollowUpsByChat = async (chatId: string) => {
+  return await prisma.followUp.findMany({
+    where: { chatId },
+    orderBy: { requestedAt: "desc" },
+  });
+};
+
+export const getAllFollowUps = async () => {
+  return await prisma.followUp.findMany({
+    include: {
+      chat: {
+        select: {
+          id: true,
+          sessionEmail: true,
+          studentName: true,
+          studentEmail: true,
+          createdAt: true,
+        },
+      },
+    },
+    orderBy: { requestedAt: "desc" },
+  });
+};
+
+export const updateFollowUpStatus = async (
+  followUpId: string,
+  status: string,
+  notes?: string
+) => {
+  const updateData: {
+    status: string;
+    contactedAt?: Date;
+    completedAt?: Date;
+    notes?: string;
+  } = { status };
+
+  if (status === "contacted" && !notes) {
+    updateData.contactedAt = new Date();
+  } else if (status === "completed") {
+    updateData.completedAt = new Date();
+  }
+
+  if (notes !== undefined) {
+    updateData.notes = notes;
+  }
+
+  return await prisma.followUp.update({
+    where: { id: followUpId },
+    data: updateData,
+  });
+};
+
+export const getFollowUpById = async (followUpId: string) => {
+  return await prisma.followUp.findUnique({
+    where: { id: followUpId },
+    include: {
+      chat: {
+        select: {
+          id: true,
+          sessionEmail: true,
+          studentName: true,
+          studentEmail: true,
+          createdAt: true,
+        },
+      },
+    },
+  });
+};
+
 export const markPreviousChatsInactive = async (
   sessionEmail: string,
   currentChatId: string
