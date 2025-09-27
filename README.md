@@ -8,7 +8,8 @@ A modern, production-ready web-based chatbot application built for university ad
 
 - **Interactive Chat**: Real-time conversation with an AI-powered admissions chatbot
 - **Smart Escalation**: Automatic detection when human intervention is needed
-- **Follow-up Scheduling**: Easy booking of calls with admissions counselors
+- **Manual Controls**: One-click buttons to escalate to a human or request a follow-up call at any time
+- **Follow-up Scheduling**: Easy booking of calls with admissions counselors via guided modal flow
 - **Real-time Updates**: Live message delivery with Socket.IO integration
 - **Session Management**: Persistent chat sessions across page refreshes
 - **Responsive Design**: Works seamlessly on desktop and mobile devices
@@ -18,6 +19,7 @@ A modern, production-ready web-based chatbot application built for university ad
 - **Real-time Chat Monitoring**: Live view of all conversations with activity indicators
 - **Comprehensive Statistics**: Total chats, active sessions, escalations, and follow-ups
 - **User Activity Tracking**: Online/offline status with connection counts
+- **Follow-up Management**: Dedicated modal to review, filter, and update follow-up requests with status notes
 - **Chat Intervention**: Direct message sending with admin identification
 - **Message History**: Complete conversation view including admin interventions
 - **User Grouping**: Organized chat display by user sessions
@@ -31,6 +33,7 @@ A modern, production-ready web-based chatbot application built for university ad
 - **TypeScript**: 100% type safety throughout the application
 - **Modern UI**: Built with Tailwind CSS and Lucide icons
 - **Activity Tracking**: User online status and connection monitoring
+- **Follow-up Persistence**: Prisma-managed `follow_ups` table with full lifecycle tracking (pending → contacted → completed/cancelled)
 
 ## 🏗️ Architecture & Design Decisions
 
@@ -132,8 +135,8 @@ A modern, production-ready web-based chatbot application built for university ad
 1. Visit the main page at `http://localhost:3000`
 2. Start chatting with the admissions bot
 3. Ask questions about programs, admissions, campus life, etc.
-4. If needed, request escalation to a human advisor
-5. Book follow-up calls by providing your contact information
+4. Use the quick-action buttons to escalate to a human advisor or schedule a follow-up call on demand
+5. Book follow-up calls by providing your contact information when prompted
 
 ### For Administrators
 
@@ -147,8 +150,10 @@ A modern, production-ready web-based chatbot application built for university ad
    - View complete conversation history
    - See both student and admin messages
    - Send real-time interventions
-5. **Message Intervention**: Send messages that appear instantly to students
-6. **Activity Tracking**: Monitor user connections and session activity
+   - Review manual follow-up submissions and escalation history
+5. **Follow-up Operations**: Open the Follow-up modal to filter requests by chat or view all pending items, update statuses, and add notes
+6. **Message Intervention**: Send messages that appear instantly to students
+7. **Activity Tracking**: Monitor user connections and session activity
 
 ## 🗄️ Database Schema
 
@@ -186,6 +191,18 @@ The application uses Prisma ORM with SQLite and includes three main tables with 
 - `adminMessage`: Admin message content
 - `timestamp`: Intervention timestamp (auto-generated)
 
+### `follow_ups`
+
+- `id`: Unique follow-up identifier (cuid)
+- `chatId`: Reference to parent chat (foreign key)
+- `studentName`: Name provided during follow-up request
+- `studentEmail`: Contact email for scheduling
+- `requestedAt`: Timestamp when follow-up was requested
+- `status`: Lifecycle status (`pending`, `contacted`, `completed`, `cancelled`)
+- `notes`: Optional admin notes
+- `contactedAt`: Timestamp when contact was initiated
+- `completedAt`: Timestamp when follow-up was completed
+
 ### Database Features
 
 - **Type Safety**: Full Prisma type generation for all operations
@@ -220,11 +237,14 @@ The system automatically detects when to escalate based on:
 - `GET /api/chat/messages?chatId=<id>` - Retrieve chat messages (including admin interventions)
 - `POST /api/chat/escalate` - Escalate chat to human
 - `POST /api/chat/follow-up` - Request follow-up call
+- `GET /api/chat/follow-ups?chatId=<id>` - Retrieve follow-up history for a specific chat
 
 ### Admin API
 
 - `GET /api/admin/chats` - Get all chats with comprehensive statistics
 - `POST /api/admin/intervention` - Send admin message with real-time delivery
+- `GET /api/admin/follow-ups` - Retrieve paginated list of follow-up requests with chat context
+- `PUT /api/admin/follow-ups` - Update follow-up status and notes
 
 ### Session API
 
@@ -316,14 +336,16 @@ The system automatically detects when to escalate based on:
 3. **Escalation Testing**
 
    - Ask complex questions that should trigger escalation
-   - Verify escalation modal appears
+   - Verify escalation modal appears automatically
+   - Use manual "Talk to Human Now" button to confirm manual flow
    - Test escalation process and admin notification
 
 4. **Follow-up Testing**
 
    - Request information about scheduling a call
-   - Verify follow-up modal appears
-   - Test contact information submission
+   - Verify follow-up modal appears automatically
+   - Use manual "Request Follow-up" button to confirm manual flow
+   - Test contact information submission and admin visibility
 
 5. **Admin Dashboard**
 
